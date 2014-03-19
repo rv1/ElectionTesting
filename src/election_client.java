@@ -20,10 +20,13 @@ import java.util.logging.Logger;
 public class election_client {
 
     // Globals
+    static final int gamePort = 3000;
+    static final String gameGroup = "225.4.5.7";
+    static InetAddress groupAddr;
+    
     static Thread recieveThread;
-    static int port;
-    static String group;
-
+    static int port = gamePort;
+    
     static DatagramSocket socket = null;
 
     public static void main(String[] args) {
@@ -32,23 +35,17 @@ public class election_client {
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
             String userInput;
 
-            if (args.length == 0) {
-                args = new String[2];
-                args[0] = "225.4.5.6";  //  group
-                System.out.print("Enter Port : ");
-                args[1] = stdIn.readLine();       //  port
+            while (port == gamePort){
+                socket = new DatagramSocket();
+                port = socket.getLocalPort();
+                socket.close();
             }
-
-            port = Integer.parseInt(args[1]);
-            group = args[0];
-
-            //electionThreadHandler elc = new electionThreadHandler(port, group);
-            recieveThread = new Thread(new electionThreadHandler(port, group));
-            recieveThread.start();
-            //System.out.println(port + args[0] + args[1] + "\n");
-
-            //Taking care of broadcast socket now
+            System.out.println("Port for datagramSocket : "+ port);
             socket = new DatagramSocket(port);
+
+            recieveThread = new Thread(new electionThreadHandler(gamePort, gameGroup));
+            recieveThread.start();
+            
             System.out.println("Created new DatagramSocket to send broadcasts on port"
                     + "\n\tport: " + port);
 
@@ -62,9 +59,9 @@ public class election_client {
 
                 buf = utils.serialize(packetToBroadcast);
 
-                InetAddress groupAddr = InetAddress.getByName(group);
+                groupAddr = InetAddress.getByName(gameGroup);
 
-                DatagramPacket packet = new DatagramPacket(buf, buf.length, groupAddr, port);
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, groupAddr, gamePort);
 
                 socket.send(packet);
 
